@@ -1,9 +1,103 @@
-var config = require('../config');
+var config = require('./test-config');
 var crypto = require('crypto');
+var http = require('http');
+var cp     = require('child_process')
 var libutils = require('../lib/utils');
 var _ = require('lodash');
+var async = require('async')
 
+/*
+@setup    {Function}
+  eg.  mocha's `setup`
 
+  We first delete and create the database before creating any connection pool. If
+  we'd established a connection prior, the dropdb call would hang until the
+  process exits. After, we run the migrations, then start the server.
+
+  This assumes the use of postgresql, which was assumed to be the deployment
+  database. See `./test-config.js` which sets the database user as
+  `process.env.USER`. This is done so sudo doesn't need to be used.
+
+@teardown {Function}
+  eg.  mocha's `teardown`
+  
+  Upon teardown, we simultaneously close the server AND release all database
+  connections, so we can setup another test app cleanly.
+
+@options {Object}
+  :done: optional function to be called with the `express()` when it's wired up
+}
+*/
+exports.setup_app = function(setup, teardown, options) {
+    if (options == null) {options = {}};
+
+    var db = config.database.postgres.database;
+    var app;
+    var server;
+
+    var setup_db = [
+    // dropdb
+      function(next) {
+          cp.exec('dropdb ' + db, function(error, out, err) {
+              // console.log("dropdb error", error);
+              next()
+          })
+      },
+      // createdb
+      function(next) {
+          cp.exec('createdb ' + db, function(error, out, err) {
+              // console.log("createdb error", error);
+              next()
+          })
+      },
+      // Wire together the app from test-config get the knex instance from the
+      // store and then run migrations
+      function(next) {
+          app = require('../app')(config);
+          var migrate = require('../lib/migrate');
+          // migrate has no means of reporting errors programmatically
+          migrate(app.store.knex, next);
+      }
+    ]
+
+    var setup_server = [
+      // Start the server
+      function(next) {
+          server = http.createServer(app);
+          server.listen(5050, function(error) {
+              if (typeof options.done === 'function') {
+                  options.done(app);
+              }
+              next()
+          });
+      }
+    ]
+
+    var series = setup_db.concat(setup_server);
+
+    // Set the teardown function
+    // We need to close the database connections and stop the server
+    teardown(function(done) {
+      async.parallel([
+        function(done) {
+          var pool = app.store.knex.client.pool.poolInstance;
+          pool.drain(function(){(pool.destroyAllNow(function(){done()}))});
+        },
+        function(done) {
+          server.close(function() {
+              done();
+          });
+        },
+      ], function(){done()});
+    });
+
+    // Run the series
+    setup(function(done) {
+        async.series(series, function(error) {
+            done(error);
+        });
+    });
+}
 exports.person = {
     username : 'bob5050',
     auth_secret :'FFFF0A0AFFFF0A0AFFFF0A0AFFFF0A0AFFFF0A0AFFFF0A0AFFFF0A0AFFFF0A0A',
