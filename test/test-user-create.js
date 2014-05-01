@@ -16,7 +16,7 @@ var q = new queuelib;
 suite('Some apt test suite name #5 ;)', function() {
     testutils.setup_app(setup, teardown);
     
-    test.only('create then delete',function(done) {
+    test('create then delete',function(done) {
         q.series([
             function(lib) {
             request.post({
