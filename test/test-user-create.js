@@ -16,14 +16,15 @@ var q = new queuelib;
 suite('Some apt test suite name #5 ;)', function() {
     testutils.setup_app(setup, teardown);
     
-    test('create then delete',function(done) {
+    test.only('create then delete',function(done) {
         q.series([
             function(lib) {
             request.post({
                 url:'http://localhost:5050/v1/user',
                 json: {foo:'bar'}},
                 function(err, resp, body) {
-                    log(body);
+                    assert.equal(body.message, "No blob ID given.")
+                    // log(body);
                     lib.done();
                 }
             );
@@ -33,7 +34,7 @@ suite('Some apt test suite name #5 ;)', function() {
                 url:'http://localhost:5050/v1/user',
                 json: { blob_id :'bar'}},
                 function(err, resp, body) {
-                    log(body);
+                    assert.equal(body.message, "Blob ID must be 32 bytes hex.");
                     lib.done();
                 }
             );
@@ -43,7 +44,7 @@ suite('Some apt test suite name #5 ;)', function() {
                 url:'http://localhost:5050/v1/user',
                 json: { blob_id : 'FFFF0A0AFFFF0A0AFFFF0A0AFFFF0A0AFFFF0A0AFFFF0A0AFFFF0A0AFFFF0A0A'}},
                 function(err, resp, body) {
-                    log(body);
+                    assert.equal(body.message, "No username given.");
                     lib.done();
                 }
             );
@@ -55,7 +56,7 @@ suite('Some apt test suite name #5 ;)', function() {
                 username : 'b',
                 blob_id : 'FFFF0A0AFFFF0A0AFFFF0A0AFFFF0A0AFFFF0A0AFFFF0A0AFFFF0A0AFFFF0A0A'}},
                 function(err, resp, body) {
-                    log(body);
+                    assert.equal(body.message, "Username must be between 2 and 15 alphanumeric characters or hyphen (-). Can not start or end with a hyphen.");
                     lib.done();
                 }
             );
@@ -67,7 +68,7 @@ suite('Some apt test suite name #5 ;)', function() {
                 username : 'bb--',
                 blob_id : 'FFFF0A0AFFFF0A0AFFFF0A0AFFFF0A0AFFFF0A0AFFFF0A0AFFFF0A0AFFFF0A0A'}},
                 function(err, resp, body) {
-                    log(body);
+                    assert.equal(body.message, "Username must be between 2 and 15 alphanumeric characters or hyphen (-). Can not start or end with a hyphen.");
                     lib.done();
                 }
             );
@@ -79,7 +80,7 @@ suite('Some apt test suite name #5 ;)', function() {
                 username : 'bb--bb',
                 blob_id : 'FFFF0A0AFFFF0A0AFFFF0A0AFFFF0A0AFFFF0A0AFFFF0A0AFFFF0A0AFFFF0A0A'}},
                 function(err, resp, body) {
-                    log(body);
+                    assert.equal(body.message, "Username cannot contain two consecutive hyphens.");
                     lib.done();
                 }
             );
@@ -91,7 +92,7 @@ suite('Some apt test suite name #5 ;)', function() {
                 username : 'bob',
                 blob_id : 'FFFF0A0AFFFF0A0AFFFF0A0AFFFF0A0AFFFF0A0AFFFF0A0AFFFF0A0AFFFF0A0A'}},
                 function(err, resp, body) {
-                    log(body);
+                    assert.equal(body.message, "No auth secret given.");
                     lib.done();
                 }
             );
@@ -104,7 +105,7 @@ suite('Some apt test suite name #5 ;)', function() {
                 auth_secret :'FFFF0A0AFFFF0A0AFFFF0A0AFFFF0A0AFFFF0A0AFFFF0A0AFFFF0A0AFFFF0A0A',
                 blob_id : 'FFFF0A0AFFFF0A0AFFFF0A0AFFFF0A0AFFFF0A0AFFFF0A0AFFFF0A0AFFFF0A0A'}},
                 function(err, resp, body) {
-                    log(body);
+                    assert.equal(body.message, "No data provided.");
                     lib.done();
                 }
             );
@@ -119,7 +120,7 @@ suite('Some apt test suite name #5 ;)', function() {
                 data : 'foo' 
                 }},
                 function(err, resp, body) {
-                    log(body);
+                    assert.equal(body.message, "No ripple address provided.");
                     lib.done();
                 }
             );
@@ -135,7 +136,7 @@ suite('Some apt test suite name #5 ;)', function() {
                 address : 'r24242'
                 }},
                 function(err, resp, body) {
-                    log(body);
+                    assert.equal(body.message, "No email address provided.");
                     lib.done();
                 }
             );
@@ -152,7 +153,7 @@ suite('Some apt test suite name #5 ;)', function() {
                 email: 'bob@foo.com'
                 }},
                 function(err, resp, body) {
-                    log(body);
+                    assert.equal(body.message, "No hostlink provided.");
                     lib.done();
                 }
             );
@@ -190,7 +191,7 @@ suite('Some apt test suite name #5 ;)', function() {
                 },
                 function(err, resp, body) {
                     assert.equal(resp.statusCode,400,'we should not be able to duplicate a user that already exists');
-                    log(body);
+                    // log(body);
                     lib.done();
                 }
             );
@@ -208,7 +209,7 @@ suite('Some apt test suite name #5 ;)', function() {
                 },
                 function(err, resp, body) {
                     assert.equal(resp.statusCode,400,'we should not be create a new person with the same ripple address');
-                    log(body);
+                    // log(body);
                     lib.done();
                 }
             );
