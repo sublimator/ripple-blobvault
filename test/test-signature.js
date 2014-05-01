@@ -1,53 +1,29 @@
 console.log(__filename);
-var config = require('../config');
-var http = require('http');
-var express = require('express');
-var store = require('../lib/store')(config.dbtype);
-var hmac = require('../lib/hmac');
-var api = require('../api');
-var testutils = require('./utils');
-var libutils = require('../lib/utils');
-var request = require('request');
-api.setStore(store);
-hmac.setStore(store);
 
+var config = require('./test-config');
+var Hash = require('hashish');
+var request = require('request');
+var http = require('http');
 var util = require('util');
+
+var assert = require('chai').assert;
 var queuelib = require('queuelib');
+var testutils = require('./utils');
+
+var libutils = require('../lib/utils');
+
 var q = new queuelib;
+
 var log = function(obj) {
     console.log(util.inspect(obj, { showHidden: true, depth: null }));
 }
 
-var app = express();
-app.use(express.json());
-app.use(express.urlencoded());
 
+suite('Some apt test suite name #3 ;)', function() {
+    testutils.setup_app(setup, teardown);
 
-var testutils = require('./utils');
-
-// create
-app.post('/v1/user', api.blob.create);
-// patch
-app.post('/v1/blob/patch', hmac.middleware, api.blob.patch);
-// delete
-app.delete('/v1/user', hmac.middleware, api.blob.delete);
-// get 
-app.get('/v1/blob/:blob_id', api.blob.get);
-// get specific
-app.get('/v1/blob/:blob_id/patch/:patch_id', api.blob.getPatch);
-// consolidate
-app.post('/v1/blob/consolidate', hmac.middleware, api.blob.consolidate);
-
-
-var assert = require('chai').assert;
 test('create , patch, patch, get specific patch #2, delete', function(done) {
-    var server = http.createServer(app);
     q.series([
-        function(lib) {
-            server.listen(5050,function() {
-                lib.done();
-            });
-        },
         // create user
         function(lib) {
         request.post({
@@ -171,13 +147,9 @@ test('create , patch, patch, get specific patch #2, delete', function(done) {
             },function(err, resp, body) {
                 assert.equal(resp.statusCode,200,'after delete request, status code should be 200');
                 lib.done();
-            });
-        },
-        function(lib) {
-            server.close(function() {
-                lib.done();
                 done();
             });
         }
     ]);
+    });
 });

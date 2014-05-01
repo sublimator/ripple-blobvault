@@ -1,5 +1,5 @@
 console.log(__filename);
-var config = require('../config');
+var config = require('./test-config');
 var request = require('request');
 var http = require('http');
 var api = require('../api');

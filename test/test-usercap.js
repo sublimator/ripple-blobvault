@@ -2,10 +2,15 @@ suite('count limiter', function() {
     // this resets the global Date
     var sinon = require('sinon');
     var assert = require('chai').assert;
-    var clock = sinon.useFakeTimers();
+    var clock;
+
+    setup(function(){
+      clock = sinon.useFakeTimers();
+    })
 
     var Counter = require('../lib/counter');
     var count = new Counter;
+
     test('we should have a thousand count',function(done) {
         for (var i = 0; i < 1004; i++) {
             count.add()
