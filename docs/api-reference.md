@@ -4,14 +4,14 @@
 
 - [`ripple-blobvault` API Reference](#ripple-blobvault-api-reference)
     - [API Endpoints](#api-endpoints)
-		- [GET /v1](#get-v1)
-		- [Blob Management](#blob-management)
-			- [POST /v1/blob/create](#post-v1blobcreate)
-			- [POST /v1/blob/patch](#post-v1blobpatch)
-			- [POST /v1/blob/consolidate](#post-v1blobconsolidate)
-			- [POST /v1/blob/delete](#post-v1blobdelete)
-			- [GET /v1/blob/:blob_id](#get-v1blobblob_id)
-			- [GET /v1/blob/:id/patch/:patch_rev](#get-v1blobidpatchpatch_rev)
+    - [GET /v1](#get-v1)
+    - [Blob Management](#blob-management)
+      - [POST /v1/blob/create](#post-v1blobcreate)
+      - [POST /v1/blob/patch](#post-v1blobpatch)
+      - [POST /v1/blob/consolidate](#post-v1blobconsolidate)
+      - [POST /v1/blob/delete](#post-v1blobdelete)
+      - [GET /v1/blob/:blob_id](#get-v1blobblob_id)
+      - [GET /v1/blob/:id/patch/:patch_rev](#get-v1blobidpatchpatch_rev)
 
 ## Schemas
 
