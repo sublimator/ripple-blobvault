@@ -1,4 +1,4 @@
-var config = require('./test-config');
+var config = require('./testing-config');
 var crypto = require('crypto');
 var util = require('util');
 var http = require('http');

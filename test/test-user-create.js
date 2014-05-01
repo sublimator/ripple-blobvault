@@ -1,6 +1,6 @@
 console.log(__filename);
 
-var config = require('./test-config');
+var config = require('./testing-config');
 var Hash = require('hashish');
 var request = require('request');
 var http = require('http');
