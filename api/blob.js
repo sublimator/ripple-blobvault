@@ -3,9 +3,83 @@ var Queue = require('queuelib');
 var libutils = require('../lib/utils')
 var Counter = require('../lib/counter');
 
+/*
+
+TODO: This is really lame, as it only shows the consumer one error at a time
+rather than a list of all the errors.
+
+In the normal case all of these would be checked anwyay. Moreover, it's a real
+pita to test sequential validators like this. The tests are always really
+brittle.
+
+Consider using some kind of declarative schema system.
+
+*/
+var validator_and_normalizer = function(config) {
+    return function(body, errback) {
+        var blobId = body.blob_id;
+        if ("string" !== typeof blobId) {
+            errback("No blob ID given.");
+        } else {
+          blobId = blobId.toLowerCase();
+        }
+        if (!/^[0-9a-f]{64}$/.exec(blobId)) {
+            errback("Blob ID must be 32 bytes hex.");
+        }
+        var username = body.username;
+        if ("string" !== typeof username) {
+            errback("No username given.");
+        }
+        if (!/^[a-zA-Z0-9][a-zA-Z0-9-]{0,13}[a-zA-Z0-9]$/.exec(username)) {
+            errback("Username must be between 2 and 15 alphanumeric" + " characters or hyphen (-)." + " Can not start or end with a hyphen.");
+        }
+        if (/--/.exec(username)) {
+            errback("Username cannot contain two consecutive hyphens.");
+        }
+
+        if (config.reserved[username.toLowerCase()]) {
+            errback("This username is reserved for "+config.reserved[username.toLowerCase()]+'.');
+        }
+
+        var authSecret = body.auth_secret;
+        if ("string" !== typeof authSecret) {
+            errback("No auth secret given.");
+        }
+
+        authSecret = authSecret.toLowerCase();
+        if (!/^[0-9a-f]{64}$/.exec(authSecret)) {
+            errback("Auth secret must be 32 bytes hex.");
+        }
+
+        if (body.data === undefined) {
+            errback("No data provided.");
+        }
+
+        if (body.address == undefined) {
+            errback("No ripple address provided.");
+        }
+
+        if (body.email == undefined) {
+            errback("No email address provided.");
+        }
+
+        if (body.hostlink == undefined) {
+            errback("No hostlink provided.");
+        }
+
+        if (body.encrypted_secret == undefined) {
+            errback("No encrypted secret provided.");
+        }
+
+        // These are normalized fields
+        // TODO: this is kind of disgusting too
+        return {blobId:blobId, username:username, authSecret:authSecret}
+    }
+}
 var blob_api_factory = function(config, store, email) {
     var exports = {};
     var count = new Counter(store.knex);
+    var validate_normalize = validator_and_normalizer(config);
 
     exports.logs = function(req,res) {
       if (req.query.format == 'html') {
@@ -16,66 +90,19 @@ var blob_api_factory = function(config, store, email) {
           res.send(count.hash)
       }
     }
-      
+
     var create = function (req, res) {
       if (!count.check()) {
         throw { res : res, statusCode: 400, error : new Error("maxcap")};
       }
-      var blobId = req.body.blob_id;
-      if ("string" !== typeof blobId) {
-        throw { res : res, statusCode: 400, error : new Error("No blob ID given.")};
-      } else {
-          blobId = blobId.toLowerCase();
-      }
 
-      if (!/^[0-9a-f]{64}$/.exec(blobId)) {
-        throw { res : res, statusCode: 400, error : new Error("Blob ID must be 32 bytes hex.")};
-      }
+      var normalized = validate_normalize(req.body, function(e) {
+        throw {res:res, statusCode: 400, error: new Error(e)}
+      });
 
-      var username = req.body.username;
-      if ("string" !== typeof username) {
-        throw { res : res, statusCode: 400, error : new Error("No username given.")};
-      } 
-      if (!/^[a-zA-Z0-9][a-zA-Z0-9-]{0,13}[a-zA-Z0-9]$/.exec(username)) {
-        throw { res : res, statusCode: 400, error : new Error("Username must be between 2 and 15 alphanumeric" + " characters or hyphen (-)." + " Can not start or end with a hyphen.")};
-      }
-      if (/--/.exec(username)) {
-        throw { res : res, statusCode: 400, error : new Error("Username cannot contain two consecutive hyphens.")};
-      }
-
-      if (config.reserved[username.toLowerCase()]) {
-        throw { res : res, statusCode: 400, error : new Error("This username is reserved for "+config.reserved[username.toLowerCase()]+'.')};
-      }
-
-      var authSecret = req.body.auth_secret;
-      if ("string" !== typeof authSecret) {
-        throw { res : res, statusCode: 400, error : new Error("No auth secret given.")};
-      }
-
-      authSecret = authSecret.toLowerCase();
-      if (!/^[0-9a-f]{64}$/.exec(authSecret)) {
-        throw { res : res, statusCode: 400, error : new Error("Auth secret must be 32 bytes hex.")};
-      }
-
-      if (req.body.data === undefined) {
-        throw { res : res, statusCode: 400, error : new Error("No data provided.")};
-      }
-
-      if (req.body.address == undefined) {
-        throw { res : res, statusCode: 400, error : new Error("No ripple address provided.")};
-      } 
-
-      if (req.body.email == undefined) {
-        throw { res : res, statusCode: 400, error : new Error("No email address provided.")};
-      } 
-
-      if (req.body.hostlink == undefined) {
-        throw { res : res, statusCode: 400, error : new Error("No hostlink provided.")};
-      } 
-
-      if (req.body.encrypted_secret == undefined) {
-        throw { res : res, statusCode: 400, error : new Error("No encrypted secret provided.")};
-      } 
+      var blobId     = normalized.blobId;
+      var username   = normalized.username;
+      var authSecret = normalized.authSecret;
 
       var q = new Queue;
       q.series([
@@ -84,17 +111,15 @@ var blob_api_factory = function(config, store, email) {
               if (resp.exists === false) {
                   lib.done();
               } else {
-                  process.nextTick(function() {
-                      res.send(400, ({result:'error',message:"User already exists"}));
-                  });
+                  res.send(400, {result:'error',message:"User already exists"});
                   lib.terminate(id);
                   return;
               }
          });
       },
-      function(lib) { 
+      function(lib) {
           // XXX Check signature
-          // coordinate with evan 
+          // coordinate with evan
           // TODO : inner key is required on updates
           var params = {
               res:res,
@@ -131,7 +156,7 @@ var blob_api_factory = function(config, store, email) {
       if (!keyresp.hasAllKeys) {
           res.send(400, ({result:'error', message:'Missing keys',missing:keyresp.missing}));
           return
-      } 
+      }
       // check patch size <= 1kb
       var size = libutils.atob(req.body.patch).length;
       if (size > config.patchsize*1024) {
@@ -151,13 +176,13 @@ var blob_api_factory = function(config, store, email) {
                       res.send(400, ({result:'error', message:'quota exceeded'}))
                       lib.terminate(id);
                       return;
-                  } else 
+                  } else
                       lib.done();
               } else if (resp.error) {
                   res.send(400, ({result:'error', message:resp.error.message}))
                   lib.terminate(id);
                   return;
-              } 
+              }
           })
       },
       function(lib,id) {
@@ -171,7 +196,7 @@ var blob_api_factory = function(config, store, email) {
       },
       // update quota amount
       function(lib,id) {
-          var newquota = size + lib.get('quota'); 
+          var newquota = size + lib.get('quota');
           store.update_where({
               set:{key:'quota',value:newquota},
               where:{key:'id',value:req.body.blob_id}},
@@ -204,7 +229,7 @@ var blob_api_factory = function(config, store, email) {
               lib.done();
           });
       }
-      ]); 
+      ]);
     };
     exports.consolidate = function (req, res) {
       var keyresp = libutils.hasKeys(req.body,['data','revision','blob_id']);
@@ -241,17 +266,17 @@ var blob_api_factory = function(config, store, email) {
           return
       }
       store.blobConsolidate(req,res,function(resp) {
-          res.send(200, (resp));
+          res.send(resp);
           //response.json(resp).pipe(res);
-      });    
+      });
     };
     exports.delete = function (req, res) {
       var keyresp = libutils.hasKeys(req.query,['signature_blob_id']);
       if (!keyresp.hasAllKeys) {
           res.send(400, ({result:'error', message:'Missing keys',missing:keyresp.missing}));
-      } else 
+      } else
           store.blobDelete(req,res,function(resp) {
-              res.send(200, (resp));
+              res.send(resp);
               //response.json(resp).pipe(res);
           });
     };
@@ -259,9 +284,9 @@ var blob_api_factory = function(config, store, email) {
       var keyresp = libutils.hasKeys(req.params,['blob_id']);
       if (!keyresp.hasAllKeys) {
           res.send(400, ({result:'error', message:'Missing keys',missing:keyresp.missing}));
-      } else 
+      } else
           store.blobGet(req,res,function(resp) {
-              res.send(200, (resp));
+              res.send(resp);
               //response.json(resp).pipe(res);
           });
     };
@@ -270,7 +295,7 @@ var blob_api_factory = function(config, store, email) {
       var keyresp = libutils.hasKeys(req.params,['blob_id','patch_id']);
       if (!keyresp.hasAllKeys) {
           res.send(400,({result:'error', message:'Missing keys',missing:keyresp.missing}));
-      } else 
+      } else
       store.blobGetPatch(req,res,function(resp) {
           res.send(resp);
           //response.json(resp).pipe(res);
