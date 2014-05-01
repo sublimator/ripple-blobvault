@@ -12,7 +12,7 @@ var libutils = require('../lib/utils');
 
 var q = new queuelib;
 
-suite('Some apt test suite name #2 ;)', function() {
+suite('Quota', function() {
     var app;
     var store;
 
@@ -21,7 +21,7 @@ suite('Some apt test suite name #2 ;)', function() {
 
     var add_test = process.env.SKIP_QUOTA_TEST != null ? test.skip : test;
 
-    add_test('create , patch, patch, get specific patch #2, delete', function(done) {
+    add_test('Series #1: create , patch, patch, get specific patch #2, delete', function(done) {
       // turn off timeouts since we are doing load testing here as well
       this.timeout(0);
       q.series([

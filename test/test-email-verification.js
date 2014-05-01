@@ -13,14 +13,14 @@ var libutils = require('../lib/utils');
 var q = new queuelib;
 
 
-suite('Some apt test suite name #6 ;)', function() {
+suite('Email verification', function() {
     var app;
     var store;
 
     var setup_options = {done: function(_app) {app=_app; store=_app.store }};
     testutils.setup_app(setup, teardown, setup_options);
 
-    test('email verification', function(done) {
+    test('Series #1', function(done) {
         var GLOBALS = {};
         q.series([
             // create the user

@@ -13,10 +13,10 @@ var libutils = require('../lib/utils');
 var q = new queuelib;
 
 
-suite('Some apt test suite name #1 ;)', function() {
+suite('Blob patch', function() {
     testutils.setup_app(setup, teardown);
-    
-    test('create , patch, patch, get specific patch #2, delete', function(done) {
+
+    test('Series #1: Create , patch, patch, get specific patch #2, delete', function(done) {
     q.series([
         // create user
         function(lib) {

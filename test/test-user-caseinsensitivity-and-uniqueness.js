@@ -11,10 +11,10 @@ var log = testutils.log;
 
 var q = new queuelib;
 
-suite('Some apt test suite name #4 ;)', function() {
+suite('User uniqueness', function() {
     testutils.setup_app(setup, teardown);
     
-    test('test case insensitive lookup',function(done) {
+    test('Series #1: test case insensitive lookup',function(done) {
       q.series([
           // first we create user bob5050
           function(lib) {

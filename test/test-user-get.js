@@ -11,10 +11,10 @@ var log = testutils.log;
 
 var q = new queuelib;
 
-suite('Some apt suite name #2 ;)', function() {
+suite('User get', function() {
     testutils.setup_app(setup, teardown);
 
-    test('create, get, the cleanup and delete', function(done) {
+    test('Series #1: create, get, the cleanup and delete', function(done) {
 
     q.series([
       function(lib) {

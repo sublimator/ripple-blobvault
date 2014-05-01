@@ -1,4 +1,4 @@
-suite('count limiter', function() {
+suite('Count limiter', function() {
     // this resets the global Date
     var sinon = require('sinon');
     var assert = require('chai').assert;
