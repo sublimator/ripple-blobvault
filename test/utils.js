@@ -1,5 +1,6 @@
 var config = require('./test-config');
 var crypto = require('crypto');
+var util = require('util');
 var http = require('http');
 var cp     = require('child_process')
 var libutils = require('../lib/utils');
@@ -7,7 +8,7 @@ var _ = require('lodash');
 var async = require('async')
 
 /*
-@setup    {Function}
+@setup {Function}
   eg.  mocha's `setup`
 
   We first delete and create the database before creating any connection pool. If
@@ -98,6 +99,10 @@ exports.setup_app = function(setup, teardown, options) {
         });
     });
 }
+exports.log = function(obj) {
+    console.log(util.inspect(obj, { showHidden: true, depth: null }));
+}
+
 exports.person = {
     username : 'bob5050',
     auth_secret :'FFFF0A0AFFFF0A0AFFFF0A0AFFFF0A0AFFFF0A0AFFFF0A0AFFFF0A0AFFFF0A0A',

@@ -9,12 +9,9 @@ var util = require('util');
 var assert = require('chai').assert;
 var queuelib = require('queuelib');
 var testutils = require('./utils');
+var log = testutils.log;
 
 var q = new queuelib;
-
-var log = function(obj) {
-    console.log(util.inspect(obj, { showHidden: true, depth: null }));
-}
 
 suite('Some apt suite name #2 ;)', function() {
     testutils.setup_app(setup, teardown);

@@ -6,3 +6,4 @@ node_modules/.bin/mocha --ui tdd -R spec test/test-user-create.js \
                                          test/test-signature.js \
                                          test/test-usercap.js \
                                          test/test-quota.js
+                                         test/test-email-verification.js
