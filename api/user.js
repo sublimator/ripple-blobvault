@@ -1,7 +1,8 @@
 var response = require('response');
 
-var user_api_factory = function(config, store, email) {
+var user_api_factory = function(config, store, email, logger) {
     var exports = {};
+    var log = logger.log;
 
     var getUserInfo = function(username, res) {
         if ("string" !== typeof username) {
@@ -94,8 +95,8 @@ var user_api_factory = function(config, store, email) {
                 return;
             } else {
                 var obj = {}
-                console.log("Token provided by user: ->"+ token + "<-");
-                console.log("Token in database       ->"+ resp.emailToken + "<-");
+                log("Token provided by user: ->"+ token + "<-");
+                log("Token in database       ->"+ resp.emailToken + "<-");
                 if (token === resp.emailToken) {
                     // update emailVerified
                     // TODO all fields have to be normalized the same

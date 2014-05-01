@@ -1,5 +1,3 @@
-console.log(__filename);
-
 var config = require('./testing-config');
 var Hash = require('hashish');
 var request = require('request');
@@ -15,7 +13,7 @@ var libutils = require('../lib/utils');
 var q = new queuelib;
 
 
-suite('Some apt test suite name #1 ;)', function() {
+suite('Some apt test suite name #6 ;)', function() {
     var app;
     var store;
 

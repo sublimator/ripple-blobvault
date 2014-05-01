@@ -5,8 +5,8 @@ if ((config.dbtype !== 'postgres') && (config.dbtype !== 'mysql')) {
     process.exit()
 }
 
-var store = require('./lib/store')(config);
-var migrate = require('./lib/migrate');
+var store = require('./lib/store')(config, console);
+var migrate = require('./lib/migrate')(console);
 
 migrate(store.knex,function() {
     console.log("Migration completed");

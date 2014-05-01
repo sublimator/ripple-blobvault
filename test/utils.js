@@ -54,8 +54,14 @@ exports.setup_app = function(setup, teardown, options) {
       // Wire together the app from test-config get the knex instance from the
       // store and then run migrations
       function(next) {
-          app = require('../app')(config);
-          var migrate = require('../lib/migrate');
+          var noop = new Function;
+          var logger = {log: noop};
+          if (config.noisytests) {
+            logger = console;
+          };
+          
+          app = require('../app')(config, logger);
+          var migrate = require('../lib/migrate')(logger);
           // migrate has no means of reporting errors programmatically
           migrate(app.store.knex, next);
       }

@@ -8,5 +8,6 @@ postgres.password = 'password'
 postgres.database = 'blobvault-test'
 
 config.testsuite = true;
+config.noisytests = false;
 
 module.exports = config;

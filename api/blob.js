@@ -76,10 +76,11 @@ var validator_and_normalizer = function(config) {
         return {blobId:blobId, username:username, authSecret:authSecret}
     }
 }
-var blob_api_factory = function(config, store, email) {
+var blob_api_factory = function(config, store, email, logger) {
     var exports = {};
-    var count = new Counter(store.knex);
+    var count = new Counter(store.knex, logger);
     var validate_normalize = validator_and_normalizer(config);
+    var log = logger.log;
 
     exports.logs = function(req,res) {
       if (req.query.format == 'html') {
@@ -172,7 +173,7 @@ var blob_api_factory = function(config, store, email) {
                   var row = resp[0];
                   lib.set({quota:row.quota});
                   if (row.quota >= config.quota*1024) {
-                      console.log("Excceeded quota. row.quota = ",row.quota, " vs config.quota*1024 = ", config.quota*1024);
+                      log("Excceeded quota. row.quota = ",row.quota, " vs config.quota*1024 = ", config.quota*1024);
                       res.send(400, ({result:'error', message:'quota exceeded'}))
                       lib.terminate(id);
                       return;
@@ -217,7 +218,7 @@ var blob_api_factory = function(config, store, email) {
           store.read_where({key:'id',value:req.body.blob_id},function(resp) {
               if (resp.length) {
                   var row = resp[0];
-                  console.log("quota:", row.quota);
+                  log("quota:", row.quota);
               }
               lib.done();
           })
@@ -251,8 +252,8 @@ var blob_api_factory = function(config, store, email) {
               store.read_where({key:'id', value:req.body.blob_id},function(resp) {
                   if (resp.length) {
                       var row = resp[0];
-                      console.log("OLD REVISION: ", row);
-                      console.log("Attempted revision", req.body.revision);
+                      log("OLD REVISION: ", row);
+                      log("Attempted revision", req.body.revision);
                   }
                   lib.done();
               });

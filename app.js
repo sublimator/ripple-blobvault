@@ -5,20 +5,21 @@ var express = require('express');
 var cors = require('cors');
 
 // Perhaps the options would better be sourced from config.js
-function buildApp(config) {
-  var email = require('./lib/email')(config);
-  var store = require('./lib/store')(config);
-  var api = require('./api')(config, store, email);
-
-  var hmac_middleware = require('./lib/hmac').middleware(config, store.hmac_getSecret);
-
+function buildApp(config, logger) {
+  var log = logger.log;
+  var email = require('./lib/email')(config, logger);
+  var store = require('./lib/store')(config, logger);
+  var api = require('./api')(config, store, email, logger);
+  var hmac_middleware = require('./lib/hmac')
+                               .middleware (
+                                    config, store.hmac_getSecret, logger);
   var app = express();
 
   if (!config.testsuite) {
-    console.log("Installing request logging middleware");
+    log("Installing request logging middleware");
     app.use(function(req,res,next) {
-        console.log(req.method + " " + req.url);
-        console.log(req.headers);
+        log(req.method + " " + req.url);
+        log(req.headers);
         next();
     });
   };
@@ -42,6 +43,7 @@ function buildApp(config) {
 
   // Should we put this here?
   app.store = store
+  app.logger = logger
 
   return app;
 }

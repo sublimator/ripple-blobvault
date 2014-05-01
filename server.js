@@ -5,7 +5,7 @@ var fs = require('fs');
 var app_factory = require('./app');
 
 try {
-  var app = app_factory(config);
+  var app = app_factory(config, console);
   var server = config.ssl ? https.createServer({
     key: fs.readFileSync(__dirname + '/blobvault.key'),
     ca: fs.readFileSync(__dirname + '/intermediate.crt'),
