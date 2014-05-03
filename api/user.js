@@ -21,7 +21,6 @@ var user_api_factory = function(config, store, email, logger) {
                     if (config.reserved[username.toLowerCase()]) {
                         obj.exists = false;
                         obj.reserved = true;
-                        // this is a 200 
                         res.send(obj);
                     } else {
                         obj.exists = false;
@@ -74,25 +73,14 @@ var user_api_factory = function(config, store, email, logger) {
         var username = req.params.username;
         var token = req.params.token;
         if ("string" !== typeof username) {
-            process.nextTick(function() {
-                throw { res : res, error: new Error("Username is required") }
-            });
-            return;
+            throw { res : res, error: new Error("Username is required") };
         }
         if ("string" !== typeof token) {
-            process.nextTick(function() {
-                throw { res : res, error: new Error("Token is required") }
-            });
-            return;
+            throw { res : res, error: new Error("Token is required") };
         }
         store.read({username:username,res:res},function(resp) {
             if (resp.exists === false) {
-                res.writeHead(404, {
-                    'Content-Type' : 'application/json',
-                    'Access-Control-Allow-Origin': '*' 
-                });
-                res.end(JSON.stringify({result:'error',message:'No such user'}));
-                return;
+                res.send(404, {result:'error',message:'No such user'});
             } else {
                 var obj = {}
                 log("Token provided by user: ->"+ token + "<-");
@@ -105,15 +93,10 @@ var user_api_factory = function(config, store, email, logger) {
                     store.update({username:username,res:res,hash:{email_verified:true}},function(resp) { 
                         // only after we mark that the email is verified, we inform
                         obj.result = 'success';
-                        response.json(obj).pipe(res);
+                        res.send(obj);
                     });
                 } else {
-                    res.writeHead(400, {
-                        'Content-Type' : 'application/json',
-                        'Access-Control-Allow-Origin': '*' 
-                    });
-                    res.end(JSON.stringify({result:'error',message:'Invalid token'}));
-                    return;
+                    res.send(400, {result:'error',message:'Invalid token'});
                 } 
             }
         });

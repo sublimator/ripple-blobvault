@@ -2,6 +2,7 @@ var response = require('response');
 var Queue = require('queuelib');
 var libutils = require('../lib/utils')
 var Counter = require('../lib/counter');
+var _ = require('lodash')
 
 /*
 
@@ -16,64 +17,87 @@ Consider using some kind of declarative schema system.
 
 */
 var validator_and_normalizer = function(config) {
-    return function(body, errback) {
+    return function(body, err) {
+        /*
+
+        Validates presence of and formedness of:
+
+          address
+          auth_secret
+          blob_id
+          data
+          email
+          encrypted_secret
+          hostlink
+          username
+
+        */
+
         var blobId = body.blob_id;
+
         if ("string" !== typeof blobId) {
-            errback("No blob ID given.");
+            return err("No blob ID given.");
         } else {
-          blobId = blobId.toLowerCase();
+            blobId = blobId.toLowerCase();
         }
         if (!/^[0-9a-f]{64}$/.exec(blobId)) {
-            errback("Blob ID must be 32 bytes hex.");
+            return err("Blob ID must be 32 bytes hex.");
         }
         var username = body.username;
+
         if ("string" !== typeof username) {
-            errback("No username given.");
-        }
-        if (!/^[a-zA-Z0-9][a-zA-Z0-9-]{0,13}[a-zA-Z0-9]$/.exec(username)) {
-            errback("Username must be between 2 and 15 alphanumeric" + " characters or hyphen (-)." + " Can not start or end with a hyphen.");
-        }
-        if (/--/.exec(username)) {
-            errback("Username cannot contain two consecutive hyphens.");
+            return err("No username given.");
         }
 
-        if (config.reserved[username.toLowerCase()]) {
-            errback("This username is reserved for "+config.reserved[username.toLowerCase()]+'.');
+        if (!/^[a-zA-Z0-9][a-zA-Z0-9-]{0,13}[a-zA-Z0-9]$/.exec(username)) {
+            return err("Username must be between 2 and 15 alphanumeric" + " characters or hyphen (-)." + " Can not start or end with a hyphen.");
+        }
+
+        if (/--/.exec(username)) {
+            return err("Username cannot contain two consecutive hyphens.");
+        }
+
+        // trademark == TradeMark
+        var normalizedUsername = libutils.normalizeUsername(username);
+        if (config.reserved[normalizedUsername]) {
+            return err("This username is reserved for "+config.reserved[normalizedUsername]+'.');
         }
 
         var authSecret = body.auth_secret;
         if ("string" !== typeof authSecret) {
-            errback("No auth secret given.");
+            return err("No auth secret given.");
         }
 
         authSecret = authSecret.toLowerCase();
         if (!/^[0-9a-f]{64}$/.exec(authSecret)) {
-            errback("Auth secret must be 32 bytes hex.");
+            return err("Auth secret must be 32 bytes hex.");
         }
 
         if (body.data === undefined) {
-            errback("No data provided.");
+            return err("No data provided.");
         }
 
         if (body.address == undefined) {
-            errback("No ripple address provided.");
+            return err("No ripple address provided.");
         }
 
         if (body.email == undefined) {
-            errback("No email address provided.");
+            return err("No email address provided.");
         }
 
         if (body.hostlink == undefined) {
-            errback("No hostlink provided.");
+            return err("No hostlink provided.");
         }
 
         if (body.encrypted_secret == undefined) {
-            errback("No encrypted secret provided.");
+            return err("No encrypted secret provided.");
         }
 
-        // These are normalized fields
-        // TODO: this is kind of disgusting too
-        return {blobId:blobId, username:username, authSecret:authSecret}
+        var cloned = _.cloneDeep(body);
+        cloned.blob_id = blobId;
+        cloned.auth_secret = authSecret;
+
+        return cloned;
     }
 }
 var blob_api_factory = function(config, store, email, logger) {
@@ -97,13 +121,15 @@ var blob_api_factory = function(config, store, email, logger) {
         throw { res : res, statusCode: 400, error : new Error("maxcap")};
       }
 
-      var normalized = validate_normalize(req.body, function(e) {
+      // If we just captured any old exception, we could leak a stack trace so
+      // we pass in this errback. Ideally we'd have a better validation function
+      var normalized = validate_normalize(req.body, function(e){
         throw {res:res, statusCode: 400, error: new Error(e)}
       });
 
-      var blobId     = normalized.blobId;
+      var blobId     = normalized.blob_id;
       var username   = normalized.username;
-      var authSecret = normalized.authSecret;
+      var authSecret = normalized.auth_secret;
 
       var q = new Queue;
       q.series([
