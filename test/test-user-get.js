@@ -12,7 +12,7 @@ var log = testutils.log;
 var q = new queuelib;
 
 suite('User get', function() {
-    testutils.setup_app(setup, teardown);
+    testutils.setupApp(setup, teardown);
 
     test('Series #1: create, get, the cleanup and delete', function(done) {
 

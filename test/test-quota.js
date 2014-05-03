@@ -17,7 +17,7 @@ suite('Quota', function() {
     var store;
 
     var setup_options = {done: function(_app) {app=_app; store=_app.store }};
-    testutils.setup_app(setup, teardown, setup_options);
+    testutils.setupApp(setup, teardown, setup_options);
 
     var add_test = process.env.SKIP_QUOTA_TEST != null ? test.skip : test;
 

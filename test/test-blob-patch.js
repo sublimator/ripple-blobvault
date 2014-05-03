@@ -14,7 +14,7 @@ var q = new queuelib;
 
 
 suite('Blob patch', function() {
-    testutils.setup_app(setup, teardown);
+    testutils.setupApp(setup, teardown);
 
     test('Series #1: Create , patch, patch, get specific patch #2, delete', function(done) {
     q.series([

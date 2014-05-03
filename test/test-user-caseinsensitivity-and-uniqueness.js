@@ -12,7 +12,7 @@ var log = testutils.log;
 var q = new queuelib;
 
 suite('User uniqueness', function() {
-    testutils.setup_app(setup, teardown);
+    testutils.setupApp(setup, teardown);
     
     test('Series #1: test case insensitive lookup',function(done) {
       q.series([

@@ -29,7 +29,7 @@ var async = require('async')
   :done: optional function to be called with the `express()` when it's wired up
 }
 */
-exports.setup_app = function(setup, teardown, options) {
+exports.setupApp = function(setup, teardown, options) {
     if (options == null) {options = {}};
 
     var db = config.database.postgres.database;
@@ -54,6 +54,7 @@ exports.setup_app = function(setup, teardown, options) {
       // Wire together the app from test-config get the knex instance from the
       // store and then run migrations
       function(next) {
+          // TODO
           var noop = new Function;
           var logger = {log: noop};
           if (config.noisytests) {
@@ -86,13 +87,13 @@ exports.setup_app = function(setup, teardown, options) {
     // We need to close the database connections and stop the server
     teardown(function(done) {
       async.parallel([
-        function(done) {
+        function(next) {
           var pool = app.store.knex.client.pool.poolInstance;
-          pool.drain(function(){(pool.destroyAllNow(function(){done()}))});
+          pool.drain(function(){(pool.destroyAllNow(function(){next()}))});
         },
-        function(done) {
+        function(next) {
           server.close(function() {
-              done();
+              next();
           });
         },
       ], function(){done()});

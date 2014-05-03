@@ -14,7 +14,7 @@ var q = new queuelib;
 
 
 suite('Signature verification', function() {
-    testutils.setup_app(setup, teardown);
+    testutils.setupApp(setup, teardown);
 
 test('Series #1: create , patch, patch, get specific patch #2, delete', function(done) {
     q.series([

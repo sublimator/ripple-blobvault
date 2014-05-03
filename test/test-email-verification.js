@@ -18,7 +18,7 @@ suite('Email verification', function() {
     var store;
 
     var setup_options = {done: function(_app) {app=_app; store=_app.store }};
-    testutils.setup_app(setup, teardown, setup_options);
+    testutils.setupApp(setup, teardown, setup_options);
 
     test('Series #1', function(done) {
         var GLOBALS = {};
