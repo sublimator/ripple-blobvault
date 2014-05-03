@@ -16,7 +16,7 @@ brittle.
 Consider using some kind of declarative schema system.
 
 */
-var validator_and_normalizer = function(config) {
+var validatorAndNormalizer = function(config) {
     return function(body, err) {
         /*
 
@@ -100,10 +100,10 @@ var validator_and_normalizer = function(config) {
         return cloned;
     }
 }
-var blob_api_factory = function(config, store, email, logger) {
+var blobApiFactory = function(config, store, email, logger) {
     var exports = {};
     var count = new Counter(store.knex, logger);
-    var validate_normalize = validator_and_normalizer(config);
+    var validateNormalize = validatorAndNormalizer(config);
     var log = logger.log;
 
     exports.logs = function(req,res) {
@@ -123,10 +123,13 @@ var blob_api_factory = function(config, store, email, logger) {
 
       // If we just captured any old exception, we could leak a stack trace so
       // we pass in this errback. Ideally we'd have a better validation function
-      var normalized = validate_normalize(req.body, function(e){
+      var normalized = validateNormalize(req.body, function(e){
         throw {res:res, statusCode: 400, error: new Error(e)}
       });
 
+      // Inconsistency: the `store` later takes care of normalizing the username
+      // before lookup, but it doesn't handle normalizing blob_id or auth_secret
+      //
       var blobId     = normalized.blob_id;
       var username   = normalized.username;
       var authSecret = normalized.auth_secret;
@@ -163,12 +166,12 @@ var blob_api_factory = function(config, store, email, logger) {
           };
           store.create(params,function(resp) {
               if (resp.error) {
-                  res.send(400, ({result:'error',message:resp.error.message}));
+                  res.send(400, {result:'error',message:resp.error.message});
                   lib.done();
                   return;
               } else {
                   email.send({email:params.email,hostlink:params.hostlink,token:params.emailToken,name:username});
-                  res.send(201, ({result:'success'}));
+                  res.send(201, {result:'success'});
                   //count.add();
                   count.adddb();
                   lib.done();
@@ -181,13 +184,13 @@ var blob_api_factory = function(config, store, email, logger) {
     exports.patch = function (req, res) {
       var keyresp = libutils.hasKeys(req.body,['blob_id','patch']);
       if (!keyresp.hasAllKeys) {
-          res.send(400, ({result:'error', message:'Missing keys',missing:keyresp.missing}));
+          res.send(400, {result:'error', message:'Missing keys',missing:keyresp.missing});
           return
       }
       // check patch size <= 1kb
       var size = libutils.atob(req.body.patch).length;
       if (size > config.patchsize*1024) {
-          res.send(400, ({result:'error', message:'patch size > 1kb',size:size}))
+          res.send(400, {result:'error', message:'patch size > 1kb',size:size})
           return
       }
       // check quota, user cannot submit patch if they >= quota limit
@@ -200,13 +203,13 @@ var blob_api_factory = function(config, store, email, logger) {
                   lib.set({quota:row.quota});
                   if (row.quota >= config.quota*1024) {
                       log("Excceeded quota. row.quota = ",row.quota, " vs config.quota*1024 = ", config.quota*1024);
-                      res.send(400, ({result:'error', message:'quota exceeded'}))
+                      res.send(400, {result:'error', message:'quota exceeded'})
                       lib.terminate(id);
                       return;
                   } else
                       lib.done();
               } else if (resp.error) {
-                  res.send(400, ({result:'error', message:resp.error.message}))
+                  res.send(400, {result:'error', message:resp.error.message})
                   lib.terminate(id);
                   return;
               }
@@ -215,7 +218,7 @@ var blob_api_factory = function(config, store, email, logger) {
       function(lib,id) {
           // check valid base64
           if (!libutils.isBase64(req.body.patch)) {
-              res.send(400, ({result:'error', message:'patch is not valid base64'}));
+              res.send(400, {result:'error', message:'patch is not valid base64'});
               lib.terminate(id);
               return
           }
@@ -229,7 +232,7 @@ var blob_api_factory = function(config, store, email, logger) {
               where:{key:'id',value:req.body.blob_id}},
               function(resp) {
                   if (resp.error) {
-                      res.send(400, ({result:'error', message:resp.error.message}));
+                      res.send(400, {result:'error', message:resp.error.message});
                       lib.terminate(id);
                       return;
                   } else {
@@ -261,12 +264,12 @@ var blob_api_factory = function(config, store, email, logger) {
     exports.consolidate = function (req, res) {
       var keyresp = libutils.hasKeys(req.body,['data','revision','blob_id']);
       if (!keyresp.hasAllKeys) {
-          res.send(400, ({result:'error', message:'Missing keys',missing:keyresp.missing}));
+          res.send(400, {result:'error', message:'Missing keys',missing:keyresp.missing});
           return;
       }
       // check valid base64
       if (!libutils.isBase64(req.body.data)) {
-          res.send(400, ({result:'error', message:'data is not valid base64'}));
+          res.send(400, {result:'error', message:'data is not valid base64'});
           return
       }
       // check revision is at greater than the previous revisions
@@ -289,46 +292,42 @@ var blob_api_factory = function(config, store, email, logger) {
       var size = libutils.atob(req.body.data).length;
       // checking quota
       if (size >= config.quota*1024) {
-          res.send(400, ({result:'error', message:'data too large',size:size}));
+          res.send(400, {result:'error', message:'data too large',size:size});
           return
       }
       store.blobConsolidate(req,res,function(resp) {
           res.send(resp);
-          //response.json(resp).pipe(res);
       });
     };
     exports.delete = function (req, res) {
       var keyresp = libutils.hasKeys(req.query,['signature_blob_id']);
       if (!keyresp.hasAllKeys) {
-          res.send(400, ({result:'error', message:'Missing keys',missing:keyresp.missing}));
+          res.send(400, {result:'error', message:'Missing keys',missing:keyresp.missing});
       } else
           store.blobDelete(req,res,function(resp) {
               res.send(resp);
-              //response.json(resp).pipe(res);
           });
     };
     exports.get = function (req, res) {
       var keyresp = libutils.hasKeys(req.params,['blob_id']);
       if (!keyresp.hasAllKeys) {
-          res.send(400, ({result:'error', message:'Missing keys',missing:keyresp.missing}));
+          res.send(400, {result:'error', message:'Missing keys',missing:keyresp.missing});
       } else
           store.blobGet(req,res,function(resp) {
               res.send(resp);
-              //response.json(resp).pipe(res);
           });
     };
 
     exports.getPatch = function (req, res) {
       var keyresp = libutils.hasKeys(req.params,['blob_id','patch_id']);
       if (!keyresp.hasAllKeys) {
-          res.send(400,({result:'error', message:'Missing keys',missing:keyresp.missing}));
+          res.send(400,{result:'error', message:'Missing keys',missing:keyresp.missing});
       } else
       store.blobGetPatch(req,res,function(resp) {
           res.send(resp);
-          //response.json(resp).pipe(res);
       });
     };
     return exports;
 }
 
-module.exports = blob_api_factory
+module.exports = blobApiFactory

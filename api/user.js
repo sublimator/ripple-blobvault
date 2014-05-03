@@ -1,6 +1,6 @@
 var response = require('response');
 
-var user_api_factory = function(config, store, email, logger) {
+var userApiFactory = function(config, store, email, logger) {
     var exports = {};
     var log = logger.log;
 
@@ -90,14 +90,14 @@ var user_api_factory = function(config, store, email, logger) {
                     // TODO all fields have to be normalized the same
                     // including blobId -> blob_id (not id)
                     // emailVerify -> email_verified etc
-                    store.update({username:username,res:res,hash:{email_verified:true}},function(resp) { 
+                    store.update({username:username,res:res,hash:{email_verified:true}},function(resp) {
                         // only after we mark that the email is verified, we inform
                         obj.result = 'success';
                         res.send(obj);
                     });
                 } else {
                     res.send(400, {result:'error',message:'Invalid token'});
-                } 
+                }
             }
         });
     }
@@ -107,4 +107,4 @@ var user_api_factory = function(config, store, email, logger) {
     return exports;
 }
 
-module.exports = user_api_factory 
+module.exports = userApiFactory
