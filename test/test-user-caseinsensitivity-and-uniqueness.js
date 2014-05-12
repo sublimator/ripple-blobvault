@@ -38,7 +38,7 @@ test('test case insensitive lookup',function(done) {
         },
         // first we create user bob5050
         function(lib) {
-          assert.equal(666,201,'yeah, this should totally kill travis MUHUHAHAHAHA!!');
+          assert.equal(666,201,'yeah, this should totally kill travis MUHUHAHAHAHA!! !!!');
           
         request.post({
             url:'http://localhost:5050/v1/user',
